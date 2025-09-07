@@ -1,113 +1,196 @@
-  const apiURL = 'http://localhost:3333/medicos';
-  const tabla = document.getElementById('tabla-medicos');
-  const modal = document.getElementById('modal');
-  const tituloModal = document.getElementById('modal-titulo');
+// Médicos
+const apiURLMedicos = 'http://localhost:3333/medicos';
+const tablaMedicos = document.getElementById('tabla-medicos');
+const modalMedico = document.getElementById('modal-medico');
+const tituloModalMedico = document.getElementById('modal-titulo-medico');
+let modoMedico = 'crear';
+let medicoEditando = null;
 
-  let modo = 'crear';
-  let medicoEditando = null;
+async function cargarMedicos() {
+  tablaMedicos.innerHTML = '';
+  const res = await fetch(apiURLMedicos);
+  const medicos = await res.json();
 
-  async function cargarMedicos() {
-    tabla.innerHTML = '';
-    const res = await fetch(apiURL);
-    const medicos = await res.json();
+  medicos.forEach(medico => {
+    const fila = document.createElement('tr');
+    fila.innerHTML = `
+      <td>${medico.idmedico}</td>
+      <td>${medico.nombres}</td>
+      <td>${medico.especialidad}</td>
+      <td>${medico.telefono}</td>
+      <td>${medico.correo}</td>
+      <td>${medico.direccion}</td>
+      <td>
+        <button class="btn-editar" onclick="abrirModalEditarMedico(${medico.idmedico})">✏️</button>
+        <button class="btn-eliminar" onclick="eliminarMedico(${medico.idmedico})">🗑️</button>
+      </td>`;
+    tablaMedicos.appendChild(fila);
+  });
+}
 
-    medicos.forEach(medico => {
-      const fila = document.createElement('tr');
-      fila.innerHTML = `
-        <td>${medico.idmedico}</td>
-        <td>${medico.nombres}</td>
-        <td>${medico.especialidad}</td>
-        <td>${medico.telefono}</td>
-        <td>${medico.correo}</td>
-        <td>${medico.direccion}</td>
-        <td>
-          <button class="btn-editar" onclick="abrirModalEditar(${medico.idmedico})">✏️</button>
-          <button class="btn-eliminar" onclick="eliminarMedico(${medico.idmedico})">🗑️</button>
-        </td>
-      `;
-      tabla.appendChild(fila);
-    });
-  }
+window.abrirModalCrearMedico = function() {
+  modoMedico = 'crear';
+  medicoEditando = null;
+  tituloModalMedico.textContent = 'Crear Médico';
+  limpiarFormularioMedico();
+  modalMedico.style.display = 'flex';
+}
 
-  function abrirModalCrear() {
-    modo = 'crear';
-    medicoEditando = null;
-    tituloModal.textContent = 'Crear Médico';
-    limpiarFormulario();
-    modal.style.display = 'flex';
-  }
+window.abrirModalEditarMedico = async function(id) {
+  modoMedico = 'editar';
+  const res = await fetch(`${apiURLMedicos}/${id}`);
+  const medico = await res.json();
+  medicoEditando = id;
+  tituloModalMedico.textContent = 'Editar Médico';
+  document.getElementById('t1-medico').value = medico.nombres;
+  document.getElementById('t2-medico').value = medico.especialidad;
+  document.getElementById('t3-medico').value = medico.telefono;
+  document.getElementById('t4-medico').value = medico.correo;
+  document.getElementById('t5-medico').value = medico.direccion;
+  modalMedico.style.display = 'flex';
+}
 
-  async function abrirModalEditar(id) {
-    modo = 'editar';
-    const res = await fetch(`${apiURL}/${id}`);
-    const medico = await res.json();
-    medicoEditando = id;
+window.cerrarModalMedico = function() {
+  modalMedico.style.display = 'none';
+}
 
-    tituloModal.textContent = 'Editar Médico';
-    document.getElementById('nombre').value = medico.nombres;
-    document.getElementById('especialidad').value = medico.especialidad;
-    document.getElementById('telefono').value = medico.telefono;
-    document.getElementById('correo').value = medico.correo;
-    document.getElementById('direccion').value = medico.direccion;
+function limpiarFormularioMedico() {
+  document.getElementById('t1-medico').value = '';
+  document.getElementById('t2-medico').value = '';
+  document.getElementById('t3-medico').value = '';
+  document.getElementById('t4-medico').value = '';
+  document.getElementById('t5-medico').value = '';
+}
 
-    modal.style.display = 'flex';
-  }
+window.guardarMedico = async function() {
+  const t1 = document.getElementById('t1-medico').value;
+  const t2 = document.getElementById('t2-medico').value;
+  const t3 = document.getElementById('t3-medico').value;
+  const t4 = document.getElementById('t4-medico').value;
+  const t5 = document.getElementById('t5-medico').value;
 
-  function cerrarModal() {
-    modal.style.display = 'none';
-  }
+  const datos = { t1, t2, t3, t4, t5 };
 
-  function limpiarFormulario() {
-    document.getElementById('nombre').value = '';
-    document.getElementById('especialidad').value = '';
-    document.getElementById('telefono').value = '';
-    document.getElementById('correo').value = '';
-    document.getElementById('direccion').value = '';
-  }
-
-async function guardarMedico() {
-  const nombre = document.getElementById('nombre').value;
-  const especialidad = document.getElementById('especialidad').value;
-  const telefono = document.getElementById('telefono').value;
-  const correo = document.getElementById('correo').value;
-  const direccion = document.getElementById('direccion').value;
-
-  const datos = {
-    t1: nombre,
-    t2: especialidad,
-    t3: telefono,
-    t4: correo,
-    t5: direccion
-  };
-
-  if (modo === 'crear') {
-    await fetch(apiURL, {
+  if (modoMedico === 'crear') {
+    await fetch(apiURLMedicos, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)
     });
-  } else if (modo === 'editar') {
-    await fetch(`${apiURL}/${medicoEditando}`, {
+  } else if (modoMedico === 'editar') {
+    await fetch(`${apiURLMedicos}/${medicoEditando}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(datos)  // <== USAMOS MISMA ESTRUCTURA
+      body: JSON.stringify(datos)
     });
   }
-
-  cerrarModal();
+  cerrarModalMedico();
   cargarMedicos();
 }
 
-  async function eliminarMedico(id) {
-    const confirmar = confirm('¿Estás seguro de que deseas eliminar este médico?');
-    if (!confirmar) return;
-
-    await fetch(`${apiURL}/${id}`, {
-      method: 'DELETE'
-    });
-
-    cargarMedicos();
-  }
-
-  // Inicializa
+window.eliminarMedico = async function(id) {
+  if (!confirm('¿Estás seguro de eliminar este médico?')) return;
+  await fetch(`${apiURLMedicos}/${id}`, { method: 'DELETE' });
   cargarMedicos();
+}
+
+cargarMedicos();
+
+
+// Pacientes
+const apiURLPacientes = 'http://localhost:3333/pacientes';
+const tablaPacientes = document.getElementById('tabla-pacientes');
+const modalPaciente = document.getElementById('modal-paciente');
+const tituloModalPaciente = document.getElementById('modal-titulo-paciente');
+let modoPaciente = 'crear';
+let pacienteEditando = null;
+
+async function cargarPacientes() {
+  tablaPacientes.innerHTML = '';
+  const res = await fetch(apiURLPacientes);
+  const pacientes = await res.json();
+
+  pacientes.forEach(paciente => {
+    const fila = document.createElement('tr');
+    fila.innerHTML = `
+      <td>${paciente.idpaciente}</td>
+      <td>${paciente.documento}</td>
+      <td>${paciente.nombres}</td>
+      <td>${paciente.telefono}</td>
+      <td>${paciente.correo}</td>
+      <td>${paciente.direccion}</td>
+      <td>
+        <button class="btn-editar" onclick="abrirModalEditarPaciente(${paciente.idpaciente})">✏️</button>
+        <button class="btn-eliminar" onclick="eliminarPaciente(${paciente.idpaciente})">🗑️</button>
+      </td>`;
+    tablaPacientes.appendChild(fila);
+  });
+}
+
+window.abrirModalCrearPaciente = function() {
+  modoPaciente = 'crear';
+  pacienteEditando = null;
+  tituloModalPaciente.textContent = 'Crear Paciente';
+  limpiarFormularioPaciente();
+  modalPaciente.style.display = 'flex';
+}
+
+window.abrirModalEditarPaciente = async function(id) {
+  modoPaciente = 'editar';
+  const res = await fetch(`${apiURLPacientes}/${id}`);
+  const paciente = await res.json();
+  pacienteEditando = id;
+  tituloModalPaciente.textContent = 'Editar Paciente';
+  document.getElementById('t1-paciente').value = paciente.documento;
+  document.getElementById('t2-paciente').value = paciente.nombres;
+  document.getElementById('t3-paciente').value = paciente.telefono;
+  document.getElementById('t4-paciente').value = paciente.correo;
+  document.getElementById('t5-paciente').value = paciente.direccion;
+  modalPaciente.style.display = 'flex';
+}
+
+window.cerrarModalPaciente = function() {
+  modalPaciente.style.display = 'none';
+}
+
+function limpiarFormularioPaciente() {
+  document.getElementById('t1-paciente').value = '';
+  document.getElementById('t2-paciente').value = '';
+  document.getElementById('t3-paciente').value = '';
+  document.getElementById('t4-paciente').value = '';
+  document.getElementById('t5-paciente').value = '';
+}
+
+window.guardarPaciente = async function() {
+  const t1 = document.getElementById('t1-paciente').value;
+  const t2 = document.getElementById('t2-paciente').value;
+  const t3 = document.getElementById('t3-paciente').value;
+  const t4 = document.getElementById('t4-paciente').value;
+  const t5 = document.getElementById('t5-paciente').value;
+
+  const datos = { t1, t2, t3, t4, t5 };
+
+  if (modoPaciente === 'crear') {
+    await fetch(apiURLPacientes, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(datos)
+    });
+  } else if (modoPaciente === 'editar') {
+    await fetch(`${apiURLPacientes}/editar/${pacienteEditando}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(datos)
+    });
+  }
+  cerrarModalPaciente();
+  cargarPacientes();
+}
+
+window.eliminarPaciente = async function(id) {
+  if (!confirm('¿Seguro de eliminar este paciente?')) return;
+  await fetch(`${apiURLPacientes}/${id}`, { method: 'DELETE' });
+  cargarPacientes();
+}
+
+cargarPacientes();
